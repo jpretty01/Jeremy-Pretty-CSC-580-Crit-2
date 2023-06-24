@@ -1,12 +1,10 @@
-# Jeremy Pretty
-# CSC 580 Crit 2 Problem 6
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
 # Set seeds for reproducibility
 np.random.seed(101)
-tf.set_random_seed(101)
+tf.random.set_seed(101)
 
 # Generating random linear data
 x = np.linspace(0, 50, 50)
@@ -25,54 +23,36 @@ plt.ylabel('y')
 plt.title('Training Data')
 plt.show()
 
-# 2) Create a TensorFlow model by defining placeholders X and Y
-X = tf.placeholder("float")
-Y = tf.placeholder("float")
+# 2) Define the model architecture using Keras API
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(1, input_shape=(1,))
+])
 
-# 3) Declare two trainable TensorFlow variables for weights and bias
-W = tf.Variable(np.random.randn(), name="weight")
-b = tf.Variable(np.random.randn(), name="bias")
+# 3) Define hyperparameters
+learning_rate = 0.001
+training_epochs = 10000
 
-# 4) Define hyperparameters
-learning_rate = 0.01
-training_epochs = 1000
+# 4) Compile the model with a loss function and optimizer
+model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate),
+              loss='mean_squared_error')
 
-# 5) Implement hypothesis, cost function, and optimizer
-# Hypothesis: y_pred = W * X + b
-y_pred = tf.add(tf.multiply(X, W), b)
+# 5) Perform data preprocessing
+x_norm = (x - np.mean(x)) / np.std(x)
+y_norm = (y - np.mean(y)) / np.std(y)
 
-# Cost function: Mean squared error
-cost = tf.reduce_sum(tf.pow(y_pred - Y, 2)) / (2 * n)
+# 6) Train the model
+history = model.fit(x_norm, y_norm, epochs=training_epochs, verbose=0)
 
-# Optimizer: Gradient Descent
-optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
-
-# 6) Implement training process inside a TensorFlow session
-init = tf.global_variables_initializer()
-
-with tf.Session() as sess:
-    sess.run(init)
-    for epoch in range(training_epochs):
-        for (_x, _y) in zip(x, y):
-            sess.run(optimizer, feed_dict={X: _x, Y: _y})
-
-        # Print the current cost every 100 epochs
-        if (epoch + 1) % 100 == 0:
-            c = sess.run(cost, feed_dict={X: x, Y: y})
-            print("Epoch:", '%04d' % (epoch + 1), "cost=", "{:.9f}".format(c),
-                  "W=", sess.run(W), "b=", sess.run(b))
-
-    print("Optimization Finished!")
-    training_cost = sess.run(cost, feed_dict={X: x, Y: y})
-    weight = sess.run(W)
-    bias = sess.run(b)
-
-# 7) Print the results for training cost, weight, and bias
-print("Training cost =", training_cost, "Weight =", weight, "Bias =", bias)
+# 7) Print the results for training loss, weight, and bias
+training_loss = history.history['loss'][-1]
+weight, bias = model.get_weights()
+print("Training loss =", training_loss)
+print("Weight =", weight)
+print("Bias =", bias)
 
 # 8) Plot the fitted line on top of the original data
 plt.scatter(x, y)
-plt.plot(x, weight * x + bias, 'r')
+plt.plot(x, np.squeeze(weight) * x_norm + bias, 'r')
 plt.xlabel('x')
 plt.ylabel('y')
 plt.title('Fitted Line')
